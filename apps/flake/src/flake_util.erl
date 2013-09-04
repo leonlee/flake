@@ -22,10 +22,13 @@
 	  get_if_hw_int/1,
 	  hw_addr_to_int/1,
 	  curr_time_millis/0,
-	  gen_id/3
+	  gen_id/4
 	 ]).
 
 -include_lib("eunit/include/eunit.hrl").
+
+%% tweak epoch to 2013-07-04
+-define(TW_EPOCH, 1372867200000000).
 
 %% get the mac/hardware address of the given interface as a 48-bit integer
 get_if_hw_int(undefined) ->
@@ -48,10 +51,10 @@ hw_addr_to_int(HwAddr) ->
 
 curr_time_millis() ->
     {MegaSec,Sec, MicroSec} = erlang:now(),
-    1000000000*MegaSec + Sec*1000 + erlang:trunc(MicroSec/1000).
+    1000000000*MegaSec + Sec*1000 + erlang:trunc(MicroSec/1000) - ?TW_EPOCH.
 
-gen_id(Time,WorkerId,Sequence) ->
-    <<Time:64/integer, WorkerId:48/integer, Sequence:16/integer>>.
+gen_id(Time, ZoneId,WorkerId,Sequence) ->
+    <<Time:48/integer, ZoneId:16/integer, WorkerId:48/integer, Sequence:16/integer>>.
 
 %%
 %% n.b. - unique_id_62/0 and friends pulled from riak

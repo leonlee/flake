@@ -14,13 +14,13 @@
 %%% limitations under the License.
 %%%
 
--module (flake_sup).
+-module(flake_sup).
 -author('Dietrich Featherston <d@boundary.com>').
 -include("flake.hrl").
 
 -include_lib("eunit/include/eunit.hrl").
 
--define (DEBUG,debug).
+-define(DEBUG, debug).
 
 -behaviour(supervisor).
 
@@ -43,13 +43,13 @@ upgrade() ->
     Old = sets:from_list([Name || {Name, _, _, _} <- supervisor:which_children(?MODULE)]),
     New = sets:from_list([Name || {Name, _, _, _, _, _} <- Specs]),
     Kill = sets:subtract(Old, New),
-  
+
     sets:fold(
-      fun(Id, ok) ->
-	      supervisor:terminate_child(?MODULE, Id),
-	      supervisor:delete_child(?MODULE, Id),
-	      ok
-      end, ok, Kill),
+        fun(Id, ok) ->
+            supervisor:terminate_child(?MODULE, Id),
+            supervisor:delete_child(?MODULE, Id),
+            ok
+        end, ok, Kill),
 
     [supervisor:start_child(?MODULE, Spec) || Spec <- Specs],
     ok.
@@ -59,27 +59,29 @@ upgrade() ->
 init([]) ->
     If = flake:get_config_value(interface, "eth0"),
     error_logger:info_msg("starting flake with hardware address of ~p as worker id~n", [If]),
-    {ok,WorkerId} = flake_util:get_if_hw_int(If),
+    {ok, WorkerId} = flake_util:get_if_hw_int(If),
     error_logger:info_msg("using worker id: ~p~n", [WorkerId]),
-  
+
+    ZoneId = flake:get_config_value(zone_id, 1),
     FlakeConfig = [
-		   {worker_id, WorkerId}
-		  ],
+        {zone_id, ZoneId},
+        {worker_id, WorkerId}
+    ],
     Flake = {flake,
-	     {flake_server, start_link, [FlakeConfig]},
-	     permanent, 5000, worker, [flake_server]},
-    
+             {flake_server, start_link, [FlakeConfig]},
+             permanent, 5000, worker, [flake_server]},
+
     TimestampPath = flake:get_config_value(timestamp_path, "/tmp/flake-timestamp-dets"),
     AllowableDowntime = flake:get_config_value(allowable_downtime, 0),
 
     {ok, TimestampTable} =
-	dets:open_file(timestamp_table,[
-					{estimated_no_objects, 10},
-					{type, set},
-					{file, TimestampPath}
-				       ]),
+    dets:open_file(timestamp_table, [
+        {estimated_no_objects, 10},
+        {type, set},
+        {file, TimestampPath}
+    ]),
 
-    {ok,TS} = persistent_timer:read_timestamp(TimestampTable),
+    {ok, TS} = persistent_timer:read_timestamp(TimestampTable),
     ?debugVal(TS),
     Now = flake_util:curr_time_millis(),
     ?debugVal(Now),
@@ -93,20 +95,20 @@ init([]) ->
 
     error_logger:info_msg("saving timestamps to ~p every 1s~n", [TimestampPath]),
     TimerConfig = [
-		   {table, TimestampTable},
-		   {interval, 1000}
-		  ],
+        {table, TimestampTable},
+        {interval, 1000}
+    ],
     PersistentTimer = {persistent_timer,
-		       {persistent_timer,start_link,[TimerConfig]},
-		       permanent, 5000, worker, [persistent_timer]},
-    
-    {ok, { {one_for_one, 10, 10}, [Flake, PersistentTimer]} }.
+                       {persistent_timer, start_link, [TimerConfig]},
+                       permanent, 5000, worker, [persistent_timer]},
 
-check_for_clock_error(true,true) ->
+    {ok, {{one_for_one, 10, 10}, [Flake, PersistentTimer]}}.
+
+check_for_clock_error(true, true) ->
     ok;
-check_for_clock_error(false,_) ->
+check_for_clock_error(false, _) ->
     error_logger:error_msg("system running backwards, failing startup of snowflake service~n"),
     exit(clock_running_backwards);
-check_for_clock_error(_,false) ->
+check_for_clock_error(_, false) ->
     error_logger:error_msg("system clock too far advanced, failing startup of snowflake service~n"),
     exit(clock_advanced).
