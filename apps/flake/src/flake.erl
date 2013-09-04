@@ -48,7 +48,7 @@ stop() ->
     Res.
 
 get_config_value(Key, Default) ->
-    case application:get_env(flake, Key) of
+    case cfgsrv:get("flake", Key) of
 	{ok, Value} -> Value;
 	_ -> Default
     end.
