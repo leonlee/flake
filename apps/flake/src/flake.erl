@@ -14,22 +14,22 @@
 %%% limitations under the License.
 %%%
 
--module (flake).
--author ('Dietrich Featherston <d@boundary.com>').
+-module(flake).
+-author('Dietrich Featherston <d@boundary.com>').
 
 %%====================================================================
 %% API
 %%====================================================================
 -export([
-	 start/0,
-	 start_link/0,
-	 stop/0,
-	 get_config_value/2
-	]).
+    start/0,
+    start_link/0,
+    stop/0,
+    get_config_value/2
+]).
 
--include ("flake.hrl").
+-include("flake.hrl").
 
--include_lib ("eunit/include/eunit.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 %% @spec start_link() -> {ok,Pid::pid()}
 %% @doc Starts the app for inclusion in a supervisor tree
@@ -48,7 +48,8 @@ stop() ->
     Res.
 
 get_config_value(Key, Default) ->
-    case cfgsrv:get("flake", Key) of
-	{ok, Value} -> Value;
-	_ -> Default
+    {ok, CfgId} = application:get_env(flake, cfg_id),
+    case cfgsrv:get(CfgId, Key) of
+        {ok, Value} -> Value;
+        _ -> Default
     end.
