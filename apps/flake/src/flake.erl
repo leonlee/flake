@@ -22,7 +22,6 @@
 %%====================================================================
 -export([
     start/0,
-    start_link/0,
     stop/0,
     get_config_value/2
 ]).
@@ -33,13 +32,13 @@
 
 %% @spec start_link() -> {ok,Pid::pid()}
 %% @doc Starts the app for inclusion in a supervisor tree
-start_link() ->
-    flake_sup:start_link().
+%% start_link() ->
+%%     flake_sup:start_link().
 
 %% @spec start() -> ok
 %% @doc Start the snowflake server.
 start() ->
-    application:start(flake).
+    appstart:start(flake, permanent).
 
 %% @spec stop() -> ok
 %% @doc Stop the snowflake server.
@@ -49,7 +48,7 @@ stop() ->
 
 get_config_value(Key, Default) ->
     {ok, CfgId} = application:get_env(flake, cfg_id),
-    case cfgsrv:get(CfgId, Key) of
+    case cfgsrv:get(CfgId, atom_to_list(Key)) of
         {ok, Value} -> Value;
         _ -> Default
     end.

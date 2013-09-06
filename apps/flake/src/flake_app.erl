@@ -16,17 +16,17 @@
 
 %% @doc Callbacks for the snowflake application.
 
--module (flake_app).
--author ('Dietrich Featherston <d@boundary.com>').
+-module(flake_app).
+-author('Dietrich Featherston <d@boundary.com>').
 
--behaviour (application).
+-behaviour(application).
 
 -export([
-	 start/2,
-	 stop/1
-	]).
+    start/2,
+    stop/1
+]).
 
--include_lib ("eunit/include/eunit.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 %% @spec start(_Type, _StartArgs) -> ServerRet
 %% @doc application start callback for snowflake.
