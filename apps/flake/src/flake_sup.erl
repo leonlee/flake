@@ -57,12 +57,13 @@ upgrade() ->
 %% @spec init([]) -> SupervisorTree
 %% @doc supervisor callback.
 init([]) ->
-    If = flake:get_config_value(interface, "eth0"),
+    If = cfgsrv:mc(flake, "interface", "eth0"),
     error_logger:info_msg("starting flake with hardware address of ~p as worker id~n", [If]),
     {ok, WorkerId} = flake_util:get_if_hw_int(If),
     error_logger:info_msg("using worker id: ~p~n", [WorkerId]),
 
-    ZoneId = flake:get_config_value(zone_id, 1),
+    ZoneName = cfgsrv:mc(flake, "zone"),
+    ZoneId = xor_area:get_zone_id(ZoneName),
     FlakeConfig = [
         {zone_id, ZoneId},
         {worker_id, WorkerId}
@@ -71,8 +72,8 @@ init([]) ->
              {flake_server, start_link, [FlakeConfig]},
              permanent, 5000, worker, [flake_server]},
 
-    TimestampPath = flake:get_config_value(timestamp_path, "/tmp/flake-timestamp-dets"),
-    AllowableDowntime = flake:get_config_value(allowable_downtime, 0),
+    TimestampPath = cfgsrv:mc(flake, "timestamp_path", "/tmp/flake-timestamp-dets"),
+    AllowableDowntime = cfgsrv:mc(flake, "allowable_downtime", 0),
 
     {ok, TimestampTable} =
     dets:open_file(timestamp_table, [

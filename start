@@ -1,1 +1,1 @@
-erl -sname flake@localhost -setcookie 'xorxor' -pa apps/*/ebin deps/*/ebin -s flake
+erl -sname flake1@localhost -setcookie 'xorxor' -pa apps/*/ebin deps/*/ebin -s flake

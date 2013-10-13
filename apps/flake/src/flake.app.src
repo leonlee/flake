@@ -12,5 +12,5 @@
          crypto
      ]},
      {mod, {flake_app, []}},
-     {env, [{cfg_node, 'cfg_node@localhost'}, {cfg_id, "flake.flake1"}]}
+     {env, [{cfg_node, 'cfg_node@localhost'}]}
  ]}.
