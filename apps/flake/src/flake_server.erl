@@ -46,7 +46,8 @@
 
 % start and link to a new flake id generator
 start_link(Config) ->
-    gen_server:start_link({local, flake}, ?MODULE, Config, []).
+    Name = xor_pl:read(name, Config),
+    gen_server:start_link({local, Name}, ?MODULE, Config, []).
 
 % generate a new snowflake id
 id() ->
@@ -68,15 +69,9 @@ respond(X) ->
 %% gen_server callbacks
 %% ----------------------------------------------------------
 
-init([{worker_id, WorkerId}]) ->
+init(Config) ->
+    WorkerId = xor_pl:read(worker_id, Config),
     {ok, #state{max_time = flake_util:curr_time_millis(), worker_id = WorkerId, sequence = 0}}.
-
-to_base(<<IntId:128/integer>>, Base) when Base < 37 ->
-    integer_to_list(IntId, Base);
-%% to_base(<<IntId:128/integer>>, Base) when Base < 63 ->
-%%     xor_common:as_list(IntId, Base);
-to_base(_, Base) ->
-    {error, {badbase, Base}}.
 
 handle_call({get, ZoneId}, _From, State = #state{max_time = MaxTime, worker_id = WorkerId, sequence = Sequence}) ->
     {Resp, S0} = get(flake_util:curr_time_millis(), MaxTime, ZoneId, WorkerId, Sequence, State),
@@ -87,7 +82,7 @@ handle_call({get, ZoneId, Base}, _From,
     {Resp, S0} = get(flake_util:curr_time_millis(), MaxTime, ZoneId, WorkerId, Sequence, State),
     case Resp of
         {ok, Id} ->
-            {reply, {ok, to_base(Id, Base)}, S0};
+            {reply, {ok, xor_common:to_base(Id, Base)}, S0};
         E ->
             {reply, E, S0}
     end;

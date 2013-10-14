@@ -61,8 +61,9 @@ init([]) ->
     error_logger:info_msg("starting flake with hardware address of ~p as worker id~n", [If]),
     {ok, WorkerId} = flake_util:get_if_hw_int(If),
     error_logger:info_msg("using worker id: ~p~n", [WorkerId]),
-
+    Name = cfgsrv:mc(flake, "name", "flake"),
     FlakeConfig = [
+        {name, Name},
         {worker_id, WorkerId}
     ],
     Flake = {flake,
