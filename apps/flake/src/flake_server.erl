@@ -23,8 +23,8 @@
 -export([
     start_link/1,
     id/0,
-    id/1
-]).
+    id/1,
+    id_in/2, id_in/1]).
 
 %% gen_server callbacks
 -export([
@@ -38,8 +38,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--record(state, {max_time, zone_id, worker_id, sequence}).
-
+-record(state, {max_time, worker_id, sequence}).
 
 %% ----------------------------------------------------------
 %% API
@@ -51,34 +50,44 @@ start_link(Config) ->
 
 % generate a new snowflake id
 id() ->
-    respond(gen_server:call(flake, get)).
+    id(0).
+id(ZoneId) ->
+    respond(gen_server:call(flake, {get, ZoneId})).
 
-id(Base) ->
-    respond(gen_server:call(flake, {get, Base})).
+id_in(Base) ->
+    id_in(0, Base).
+id_in(ZoneId, Base) ->
+    respond(gen_server:call(flake, {get, ZoneId, Base})).
 
 respond({ok, Flake}) ->
     {ok, Flake};
 respond(X) ->
     X.
 
-
 %% ----------------------------------------------------------
 %% gen_server callbacks
 %% ----------------------------------------------------------
 
-init([{zone_id, ZoneId}, {worker_id, WorkerId}]) ->
-    {ok, #state{max_time = flake_util:curr_time_millis(), zone_id = ZoneId, worker_id = WorkerId, sequence = 0}}.
+init([{worker_id, WorkerId}]) ->
+    {ok, #state{max_time = flake_util:curr_time_millis(), worker_id = WorkerId, sequence = 0}}.
 
-handle_call(get, _From, State = #state{max_time = MaxTime, zone_id = ZoneId, worker_id = WorkerId, sequence = Sequence}) ->
+to_base(<<IntId:128/integer>>, Base) when Base < 37 ->
+    integer_to_list(IntId, Base);
+%% to_base(<<IntId:128/integer>>, Base) when Base < 63 ->
+%%     xor_common:as_list(IntId, Base);
+to_base(_, Base) ->
+    {error, {badbase, Base}}.
+
+handle_call({get, ZoneId}, _From, State = #state{max_time = MaxTime, worker_id = WorkerId, sequence = Sequence}) ->
     {Resp, S0} = get(flake_util:curr_time_millis(), MaxTime, ZoneId, WorkerId, Sequence, State),
     {reply, Resp, S0};
 
-handle_call({get, Base}, _From, State = #state{max_time = MaxTime, zone_id = ZoneId, worker_id = WorkerId, sequence = Sequence}) ->
+handle_call({get, ZoneId, Base}, _From,
+            State = #state{max_time = MaxTime, worker_id = WorkerId, sequence = Sequence}) ->
     {Resp, S0} = get(flake_util:curr_time_millis(), MaxTime, ZoneId, WorkerId, Sequence, State),
     case Resp of
         {ok, Id} ->
-            <<IntId:128/integer>> = Id,
-            {reply, {ok, flake_util:as_list(IntId, Base)}, S0};
+            {reply, {ok, to_base(Id, Base)}, S0};
         E ->
             {reply, E, S0}
     end;

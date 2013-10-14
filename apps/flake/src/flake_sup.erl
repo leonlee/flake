@@ -62,10 +62,7 @@ init([]) ->
     {ok, WorkerId} = flake_util:get_if_hw_int(If),
     error_logger:info_msg("using worker id: ~p~n", [WorkerId]),
 
-    ZoneName = cfgsrv:mc(flake, "zone"),
-    ZoneId = xor_area:get_zone_id(ZoneName),
     FlakeConfig = [
-        {zone_id, ZoneId},
         {worker_id, WorkerId}
     ],
     Flake = {flake,
