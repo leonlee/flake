@@ -31,7 +31,7 @@
 %% @spec start(_Type, _StartArgs) -> ServerRet
 %% @doc application start callback for snowflake.
 start(_Type, _StartArgs) ->
-    ok = xor_common:connect_cfg_node(flake, cfg_node),
+    ok = xor_util:connect_cfg_node(flake, cfg_node),
     flake_sup:start_link().
 
 %% @spec stop(_State) -> ServerRet

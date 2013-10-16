@@ -71,5 +71,5 @@ flake_test() ->
     ?assert(?debugVal(Worker) =:= WorkerId),
     ?assert(?debugVal(Sequence) =:= 0),
     <<FlakeInt:128/integer>> = Flake,
-    ?debugVal(xor_common:as_list(FlakeInt, 62)),
+    ?debugVal(xor_util:as_list(FlakeInt, 62)),
     ok.

@@ -82,7 +82,7 @@ handle_call({get, ZoneId, Base}, _From,
     {Resp, S0} = get(flake_util:curr_time_millis(), MaxTime, ZoneId, WorkerId, Sequence, State),
     case Resp of
         {ok, Id} ->
-            {reply, {ok, xor_common:to_base(Id, Base)}, S0};
+            {reply, {ok, xor_util:to_base(Id, Base)}, S0};
         E ->
             {reply, E, S0}
     end;
