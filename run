@@ -1,0 +1,1 @@
+erl -detached -sname flake1@localhost -setcookie 'xorxor' -pa apps/*/ebin deps/*/ebin -s flake
