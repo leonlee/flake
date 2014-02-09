@@ -33,81 +33,81 @@
 %% @spec start_link() -> ServerRet
 %% @doc API for starting the supervisor.
 start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% @spec upgrade() -> ok
 %% @doc Add processes if necessary.
 upgrade() ->
-    {ok, {_, Specs}} = init([]),
+  {ok, {_, Specs}} = init([]),
 
-    Old = sets:from_list([Name || {Name, _, _, _} <- supervisor:which_children(?MODULE)]),
-    New = sets:from_list([Name || {Name, _, _, _, _, _} <- Specs]),
-    Kill = sets:subtract(Old, New),
+  Old = sets:from_list([Name || {Name, _, _, _} <- supervisor:which_children(?MODULE)]),
+  New = sets:from_list([Name || {Name, _, _, _, _, _} <- Specs]),
+  Kill = sets:subtract(Old, New),
 
-    sets:fold(
-        fun(Id, ok) ->
-            supervisor:terminate_child(?MODULE, Id),
-            supervisor:delete_child(?MODULE, Id),
-            ok
-        end, ok, Kill),
+  sets:fold(
+    fun(Id, ok) ->
+      supervisor:terminate_child(?MODULE, Id),
+      supervisor:delete_child(?MODULE, Id),
+      ok
+    end, ok, Kill),
 
-    [supervisor:start_child(?MODULE, Spec) || Spec <- Specs],
-    ok.
+  [supervisor:start_child(?MODULE, Spec) || Spec <- Specs],
+  ok.
 
 %% @spec init([]) -> SupervisorTree
 %% @doc supervisor callback.
 init([]) ->
-    If = cfgsrv:mc(flake, "interface", "eth0"),
-    error_logger:info_msg("starting flake with hardware address of ~p as worker id~n", [If]),
-    {ok, WorkerId} = flake_util:get_if_hw_int(If),
-    error_logger:info_msg("using worker id: ~p~n", [WorkerId]),
-    Name = cfgsrv:mc(flake, "name", "flake"),
-    FlakeConfig = [
-        {name, Name},
-        {worker_id, WorkerId}
-    ],
-    Flake = {flake,
-             {flake_server, start_link, [FlakeConfig]},
-             permanent, 5000, worker, [flake_server]},
+  If = cfgsrv:mc(flake, "interface", "eth0"),
+  error_logger:info_msg("starting flake with hardware address of ~p as worker id~n", [If]),
+  {ok, WorkerId} = flake_util:get_if_hw_int(If),
+  error_logger:info_msg("using worker id: ~p~n", [WorkerId]),
+  Name = cfgsrv:mc(flake, "name", "flake"),
+  FlakeConfig = [
+    {name, Name},
+    {worker_id, WorkerId}
+  ],
+  Flake = {flake,
+    {flake_server, start_link, [FlakeConfig]},
+    permanent, 5000, worker, [flake_server]},
 
-    TimestampPath = cfgsrv:mc(flake, "timestamp_path", "/tmp/flake-timestamp-dets"),
-    AllowableDowntime = cfgsrv:mc(flake, "allowable_downtime", 0),
+  TimestampPath = cfgsrv:mc(flake, "timestamp_path", "/tmp/flake-timestamp-dets"),
+  AllowableDowntime = cfgsrv:mc(flake, "allowable_downtime", 0),
 
-    {ok, TimestampTable} =
+  {ok, TimestampTable} =
     dets:open_file(timestamp_table, [
-        {estimated_no_objects, 10},
-        {type, set},
-        {file, TimestampPath}
+      {estimated_no_objects, 10},
+      {type, set},
+      {file, TimestampPath}
     ]),
 
-    {ok, TS} = persistent_timer:read_timestamp(TimestampTable),
-    ?debugVal(TS),
-    Now = flake_util:curr_time_millis(),
-    ?debugVal(Now),
-    TimeSinceLastRun = Now - TS,
+  {ok, TS} = persistent_timer:read_timestamp(TimestampTable),
+  ?debugVal(TS),
+  Now = flake_util:curr_time_millis(),
+  ?debugVal(Now),
+  TimeSinceLastRun = Now - TS,
 
-    %% fail startup if
-    %% 1) the clock time last recorded is later than the current time
-    %% 2) the last recorded time is more than N ms in the past to prevent
-    %%    generating future ids in the event that the system clock is set to some point far in the future
-    check_for_clock_error(Now >= TS, TimeSinceLastRun < AllowableDowntime),
+  %% fail startup if
+  %% 1) the clock time last recorded is later than the current time
+  %% 2) the last recorded time is more than N ms in the past to prevent
+  %%    generating future ids in the event that the system clock is set to some point far in the future
+  check_for_clock_error(Now >= TS, TimeSinceLastRun < AllowableDowntime),
 
-    error_logger:info_msg("saving timestamps to ~p every 1s~n", [TimestampPath]),
-    TimerConfig = [
-        {table, TimestampTable},
-        {interval, 1000}
-    ],
-    PersistentTimer = {persistent_timer,
-                       {persistent_timer, start_link, [TimerConfig]},
-                       permanent, 5000, worker, [persistent_timer]},
+  error_logger:info_msg("saving timestamps to ~p every 1s~n", [TimestampPath]),
+  TimerConfig = [
+    {table, TimestampTable},
+    {interval, 1000}
+  ],
+  PersistentTimer = {persistent_timer,
+    {persistent_timer, start_link, [TimerConfig]},
+    permanent, 5000, worker, [persistent_timer]},
 
-    {ok, {{one_for_one, 10, 10}, [Flake, PersistentTimer]}}.
+  {ok, {{one_for_one, 10, 10}, [Flake, PersistentTimer]}}.
 
 check_for_clock_error(true, true) ->
-    ok;
+  ok;
 check_for_clock_error(false, _) ->
-    error_logger:error_msg("system running backwards, failing startup of snowflake service~n"),
-    exit(clock_running_backwards);
+  error_logger:error_msg("system running backwards, failing startup of snowflake service~n"),
+  exit(clock_running_backwards);
 check_for_clock_error(_, false) ->
-    error_logger:error_msg("system clock too far advanced, failing startup of snowflake service~n"),
-    exit(clock_advanced).
+  error_logger:error_msg("system clock too far advanced, failing startup of snowflake service~n"),
+  exit(clock_advanced).

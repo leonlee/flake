@@ -22,8 +22,8 @@
 -behaviour(application).
 
 -export([
-    start/2,
-    stop/1
+  start/2,
+  stop/1
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -31,10 +31,10 @@
 %% @spec start(_Type, _StartArgs) -> ServerRet
 %% @doc application start callback for snowflake.
 start(_Type, _StartArgs) ->
-    ok = xor_util:connect_cfg_node(flake, cfg_node),
-    flake_sup:start_link().
+  ok = xor_util:connect_cfg_node(flake, cfg_node),
+  flake_sup:start_link().
 
 %% @spec stop(_State) -> ServerRet
 %% @doc application stop callback for snowflake.
 stop(_State) ->
-    ok.
+  ok.

@@ -1,16 +1,16 @@
 {application, flake,
- [
-     {description, "flake"},
-     {vsn, "0.7"},
-     {modules, []},
-     {registered, []},
-     {applications, [
-         kernel,
-         stdlib,
-         sasl,
-         inets,
-         crypto
-     ]},
-     {mod, {flake_app, []}},
-     {env, [{cfg_node, 'cfg_node@localhost'}]}
- ]}.
+  [
+    {description, "flake"},
+    {vsn, "0.7"},
+    {modules, []},
+    {registered, []},
+    {applications, [
+      kernel,
+      stdlib,
+      sasl,
+      inets,
+      crypto
+    ]},
+    {mod, {flake_app, []}},
+    {env, [{cfg_node, 'cfg_node@localhost'}]}
+  ]}.

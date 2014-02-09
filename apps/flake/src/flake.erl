@@ -33,13 +33,13 @@
 %% @spec start() -> ok
 %% @doc Start the snowflake server.
 start() ->
-    appstart:start(flake, permanent).
+  appstart:start(flake, permanent).
 
 %% @spec stop() -> ok
 %% @doc Stop the snowflake server.
 stop() ->
-    Res = application:stop(flake),
-    Res.
+  Res = application:stop(flake),
+  Res.
 
 get_config_id() ->
-    "flake." ++ atom_to_list(node()).
+  "flake." ++ atom_to_list(node()).
